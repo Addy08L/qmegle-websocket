@@ -11,7 +11,6 @@ let onlineUsers = 0;
 const waitingRoom = [];
 const activeConnections = new Map();
 
-// User session management
 class UserSession {
   constructor(ws, interests = [], strictMatch = false) {
     this.id = uuid.v4();
@@ -24,13 +23,12 @@ class UserSession {
   }
 }
 
-// Matchmaking system
 function findMatch(newUser) {
   for (let user of waitingRoom) {
     if (user.id === newUser.id) continue;
-    
+
     if (newUser.strictMatch || user.strictMatch) {
-      const commonInterests = newUser.interests.filter(interest => 
+      const commonInterests = newUser.interests.filter(interest =>
         user.interests.includes(interest)
       );
       if (commonInterests.length === 0) continue;
@@ -46,7 +44,6 @@ wss.on('connection', (ws) => {
   const user = new UserSession(ws);
   activeConnections.set(user.id, user);
 
-  // Send initial connection data
   ws.send(JSON.stringify({
     type: 'init',
     userId: user.id,
@@ -55,8 +52,8 @@ wss.on('connection', (ws) => {
 
   ws.on('message', (data) => {
     const message = JSON.parse(data);
-    
-    switch(message.type) {
+
+    switch (message.type) {
       case 'start-chat':
         user.interests = message.interests;
         user.strictMatch = message.strictMatch;
@@ -94,28 +91,17 @@ function matchUsers(user) {
   const partner = findMatch(user);
   if (!partner) return;
 
-  // Remove both users from waiting room
   waitingRoom.splice(waitingRoom.indexOf(user), 1);
   waitingRoom.splice(waitingRoom.indexOf(partner), 1);
 
-  // Create chat room
   user.partner = partner.id;
   partner.partner = user.id;
 
-  // Notify both users
-  user.ws.send(JSON.stringify({
-    type: 'matched',
-    partnerId: partner.id
-  }));
-
-  partner.ws.send(JSON.stringify({
-    type: 'matched',
-    partnerId: user.id
-  }));
+  user.ws.send(JSON.stringify({ type: 'matched', partnerId: partner.id }));
+  partner.ws.send(JSON.stringify({ type: 'matched', partnerId: user.id }));
 }
 
 function handleMessage(sender, message) {
-  // Spam protection
   const now = Date.now();
   if (now - sender.lastMessageTime < 1000) return;
   if (sender.messageCount++ > 30) {
@@ -124,7 +110,6 @@ function handleMessage(sender, message) {
   }
   sender.lastMessageTime = now;
 
-  // Message validation
   if (message.text.length > 500 || containsBannedWords(message.text)) return;
 
   if (sender.partner && activeConnections.has(sender.partner)) {
