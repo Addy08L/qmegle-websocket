@@ -153,6 +153,6 @@ function containsBannedWords(text) {
   return bannedWords.some(word => text.toLowerCase().includes(word));
 }
 
-server.listen(process.env.PORT || 3000, () => {
-  console.log(`Server running on port ${process.env.PORT || 3000}`);
+server.listen(process.env.PORT || 8080, () => {
+  console.log(`Server running on port ${process.env.PORT || 8080}`);
 });
